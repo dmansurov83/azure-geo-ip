@@ -2,27 +2,26 @@
 
 A ready-to-use `azure.dat` GeoIP dataset built from [Microsoft Azure Service Tags](https://www.microsoft.com/download/details.aspx?id=56519), formatted as a protobuf `GeoIP` file for **v2rayA / Xray** routing rules.
 
-Each Azure Service Tag becomes a "country code" in the dataset, so you can route traffic with ordinary `geoip:` rules:
+Each Azure Service Tag becomes a "country code": the tag name is uppercased, non-alphanumeric characters become dashes, and the result is prefixed with `AZURE-`. You can then route traffic with ordinary `geoip:` rules:
 
-| Service Tag            | Code in `azure.dat`        |
-| ---------------------- | -------------------------- |
-| `Sql`                  | `AZURE` (legacy alias)     |
-| `Sql.WestEurope`       | `AZURE-WESTEUROPE` (legacy alias) |
-| `AzureCloud`           | `AZURE-AZURECLOUD`         |
-| `Storage`              | `AZURE-STORAGE`            |
-| `Sql.WestEurope`       | `AZURE-SQL-WESTEUROPE`     |
+| Service Tag        | Code in `azure.dat`    |
+| ------------------ | ---------------------- |
+| `AzureCloud`       | `AZURE-AZURECLOUD`     |
+| `Storage`          | `AZURE-STORAGE`        |
+| `Sql`              | `AZURE-SQL`            |
+| `Sql.WestEurope`   | `AZURE-SQL-WESTEUROPE` |
 
 Example routing rule:
 
 ```json
-{ "type": "field", "outboundTag": "direct", "ip": ["geoip:azure", "geoip:azure-storage"] }
+{ "type": "field", "outboundTag": "direct", "ip": ["geoip:azure-storage"] }
 ```
 
 ## Files
 
-| File                    | Purpose                                                        |
-| ----------------------- | -------------------------------------------------------------- |
-| `azure.dat`             | Generated GeoIP dataset (protobuf), refreshed automatically    |
+| File                    | Purpose                                                          |
+| ----------------------- | ---------------------------------------------------------------- |
+| `azure.dat`             | Generated GeoIP dataset (protobuf), refreshed automatically      |
 | `update-azure-dat.sh`   | POSIX shell script that downloads Service Tags and builds `.dat` |
 
 ## Automatic updates
@@ -37,27 +36,27 @@ curl -fsSLO https://raw.githubusercontent.com/dmansurov83/azure-geo-ip/main/azur
 
 ## Building locally
 
-Requires `awk`, `sort` and either `curl` or `wget` (POSIX shell):
+Requires a POSIX shell with `awk`, `sort` and either `curl` or `wget`:
 
 ```sh
-# build the dataset only
-./update-azure-dat.sh --output azure.dat
+# all Service Tags -> ./azure.dat
+./update-azure-dat.sh
 
-# build and install for v2rayA, then restart the service
-sudo ./update-azure-dat.sh --tags 'Sql.*,Storage.*' --asset-dir /usr/local/share/v2ray
+# only SQL and Storage tags
+./update-azure-dat.sh --tags 'Sql.*,Storage.*'
 
-# build from an already downloaded ServiceTags JSON
+# from an already downloaded ServiceTags JSON
 ./update-azure-dat.sh --file ServiceTags_Public_latest.json --output azure.dat
 ```
 
 `--tags` accepts a comma-separated list of glob patterns matched against Service Tag names: `*` (all tags, default), `Sql.*`, `Sql.*,Storage.WestEurope`.
 
-Run `./update-azure-dat.sh --help` for the full option list and environment variables (`SOURCE_URL`, `ASSET_DIR`, `TAGS`, `RESTART_CMD`).
+Run `./update-azure-dat.sh --help` for the full option list and environment variables (`SOURCE_URL`, `TAGS`, `OUTPUT`).
 
 ## Notes
 
 - The dataset is generated, not hand-edited: changes to `azure.dat` should come from the pipeline or from running the script.
-- Size is a few megabytes; Azure publishes updated Service Tags roughly monthly, the schedule above keeps the file current.
+- The file is about 1.5 MB; Azure publishes updated Service Tags roughly monthly and the schedule above keeps it current.
 - Azure Service Tags data is published by Microsoft and remains subject to Microsoft's terms. This repository only redistributes the converted form.
 
 ## License
