@@ -1,0 +1,41 @@
+name: Update azure.dat
+
+on:
+  schedule:
+    # 1st and 15th of every month -> a refresh roughly every two weeks
+    - cron: "0 4 1,15 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-azure-dat
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build azure.dat from Azure Service Tags
+        run: sh ./update-azure-dat.sh --output azure.dat
+
+      - name: Verify dataset
+        run: |
+          test -s azure.dat
+          echo "azure.dat: $(wc -c < azure.dat) bytes"
+
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet -- azure.dat; then
+            echo "azure.dat is already up to date"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add azure.dat
+          git commit -m "chore: refresh azure.dat from Azure Service Tags"
+          git push
